@@ -1,6 +1,6 @@
 name = "isos-repo-worker"
 main = "src/index.ts"
-compatibility_date = "2025-02-04",
+compatibility_date = "2025-02-04"
 # Set this to false if you don't want to use the default *.workers.dev route.
 # Note that *.workers.dev routes don't support native worker-level caching: https://developers.cloudflare.com/workers/runtime-apis/cache/
 workers_dev = true
