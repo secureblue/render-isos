@@ -39,128 +39,6 @@ function getRangeHeader(range: ParsedRange, fileSize: number): string {
   }/${fileSize}`;
 }
 
-// some ideas for this were taken from / inspired by
-// https://github.com/cloudflare/workerd/blob/main/samples/static-files-from-disk/static.js
-async function makeListingResponse(
-  path: string,
-  env: Env,
-  request: Request
-): Promise<Response | null> {
-  if (path === "/") path = "";
-  else if (path !== "" && !path.endsWith("/")) {
-    path += "/";
-  }
-  let cursor = new URL(request.url).searchParams.get("cursor") || undefined;
-  let listing = await env.R2_BUCKET.list({
-    prefix: path,
-    delimiter: "/",
-    cursor,
-    limit: env.ITEMS_PER_PAGE || 1000,
-  });
-
-  if (listing.delimitedPrefixes.length === 0 && listing.objects.length === 0) {
-    return null;
-  }
-
-  let html: string = "";
-  let lastModified: Date | null = null;
-
-  if (request.method === "GET") {
-    let htmlList = [];
-
-    if (path !== "") {
-      htmlList.push(
-        `      <tr>` +
-          `<td><a href="../">../</a></td>` +
-          `<td>-</td><td>-</td></tr>`
-      );
-    }
-
-    for (let dir of listing.delimitedPrefixes) {
-      if (dir.endsWith("/")) dir = dir.substring(0, dir.length - 1);
-      let name = dir.substring(path.length, dir.length);
-      if (name.startsWith(".") && env.HIDE_HIDDEN_FILES) continue;
-      htmlList.push(
-        `      <tr>` +
-          `<td><a href="${encodeURIComponent(name)}/">${name}/</a></td>` +
-          `<td>-</td><td>-</td></tr>`
-      );
-    }
-    for (let file of listing.objects) {
-      let name = file.key.substring(path.length, file.key.length);
-      if (name.startsWith(".") && env.HIDE_HIDDEN_FILES) continue;
-
-      let dateStr = file.uploaded.toISOString();
-      dateStr = dateStr.split(".")[0].replace("T", " ");
-      dateStr = dateStr.slice(0, dateStr.lastIndexOf(":")) + "Z";
-
-      htmlList.push(
-        `      <tr>` +
-          `<td><a href="${encodeURIComponent(name)}">${name}</a></td>` +
-          `<td>${dateStr}</td><td>${niceBytes(file.size)}</td></tr>`
-      );
-
-      if (lastModified == null || file.uploaded > lastModified) {
-        lastModified = file.uploaded;
-      }
-    }
-
-    if (listing.truncated) {
-      htmlList.push(
-        `      <tr>` +
-          `<td><a href="?cursor=${listing.cursor}">...see more.../</a></td>` +
-          `<td>-</td><td>-</td></tr>`
-      );
-    }
-
-    if (path === "") path = "/";
-
-    html = `<!DOCTYPE html>
-<html>
-  <head>
-    <title>Index of ${path}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta charset="utf-8">
-    <style>
-      td { padding-right: 16px; text-align: right; font-family: monospace }
-      td:nth-of-type(1) { text-align: left; overflow-wrap: anywhere }
-      td:nth-of-type(3) { white-space: nowrap }
-      th { text-align: left; }
-      @media (prefers-color-scheme: dark) {
-        body {
-          color: white;
-          background-color: #1c1b22;
-        }
-        a {
-          color: #3391ff;
-        }
-        a:visited {
-          color: #C63B65;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <h1>Index of ${path}</h1>
-    <table>
-      <tr><th>Filename</th><th>Modified</th><th>Size</th></tr>
-${htmlList.join("\n")}
-    </table>
-  </body>
-</html>
-  `;
-  }
-
-  return new Response(html === "" ? null : html, {
-    status: 200,
-    headers: {
-      "access-control-allow-origin": env.ALLOWED_ORIGINS || "",
-      "last-modified": lastModified === null ? "" : lastModified.toUTCString(),
-      "content-type": "text/html",
-      "cache-control": env.DIRECTORY_CACHE_CONTROL || "no-store",
-    },
-  });
-}
 
 async function retryAsync<T>(env: Env, fn: () => Promise<T>): Promise<T> {
   const maxAttempts = env.R2_RETRIES || 0;
@@ -222,29 +100,31 @@ export default {
         console.warn("Cache MISS for", request.url);
       }
       const url = new URL(request.url);
-      let path = (env.PATH_PREFIX || "") + decodeURIComponent(url.pathname);
+      const keyringFilename = "secureblue-keyring.gpg";
+      const bucketName = "isos";
+      const isoDownloadPath = "/download";
+      const checksumDownloadPath = "/downloadSHA256SUM";
+      let objectName: string | undefined;
+      let key: string | undefined = undefined;
+      if (url.pathname === isoDownloadPath || url.pathname === checksumDownloadPath) {
+        const de = url.searchParams.get("de");
+        const nvidia = url.searchParams.get("nvidia");
 
-      // directory logic
-      if (path.endsWith("/")) {
-        // if theres an index file, try that. 404 logic down below has dir fallback.
-        if (env.INDEX_FILE && env.INDEX_FILE !== "") {
-          path += env.INDEX_FILE;
-          triedIndex = true;
-        } else if (env.DIRECTORY_LISTING) {
-          // return the dir listing
-          let listResponse = await makeListingResponse(path, env, request);
-
-          if (listResponse !== null) {
-            if (listResponse.headers.get("cache-control") !== "no-store") {
-              ctx.waitUntil(cache.put(request, listResponse.clone()));
-            }
-            return listResponse;
-          }
+        if (!de || !nvidia) {
+          return new Response("Missing parameters", { status: 400 });
         }
-      }
 
-      if (path !== "/" && path.startsWith("/")) {
-        path = path.substring(1);
+        key = `${de}-${nvidia}-hardened.iso`;
+        if (url.pathname === checksumDownloadPath) {
+          key += "-CHECKSUM";
+        }
+
+        objectName = `${bucketName}/${key}`;
+      } else if (url.pathname.slice(1) === keyringFilename) {
+        key = keyringFilename;
+        objectName = `${bucketName}/${keyringFilename}`;
+      } else {
+        return new Response("Not Found", { status: 404 });
       }
 
       let file: R2Object | R2ObjectBody | null | undefined;
@@ -253,7 +133,7 @@ export default {
       if (request.method === "GET") {
         const rangeHeader = request.headers.get("range");
         if (rangeHeader) {
-          file = await retryAsync(env, () => env.R2_BUCKET.head(path));
+          file = await retryAsync(env, () => env.R2_BUCKET.head(objectName as string));
           if (file === null)
             return new Response("File Not Found", { status: 404 });
           const parsedRanges = parseRange(file.size, rangeHeader);
@@ -306,7 +186,7 @@ export default {
 
       if (ifMatch || ifUnmodifiedSince) {
         file = await retryAsync(env, () =>
-          env.R2_BUCKET.get(path, {
+          env.R2_BUCKET.get(objectName as string, {
             onlyIf: {
               etagMatches: ifMatch,
               uploadedBefore: ifUnmodifiedSince
@@ -326,14 +206,14 @@ export default {
         // if-none-match overrides if-modified-since completely
         if (ifNoneMatch) {
           file = await retryAsync(env, () =>
-            env.R2_BUCKET.get(path, {
+            env.R2_BUCKET.get(objectName as string, {
               onlyIf: { etagDoesNotMatch: ifNoneMatch },
               range,
             })
           );
         } else if (ifModifiedSince) {
           file = await retryAsync(env, () =>
-            env.R2_BUCKET.get(path, {
+            env.R2_BUCKET.get(objectName as string, {
               onlyIf: { uploadedAfter: new Date(ifModifiedSince) },
               range,
             })
@@ -346,38 +226,21 @@ export default {
 
       file =
         request.method === "HEAD"
-          ? await retryAsync(env, () => env.R2_BUCKET.head(path))
+          ? await retryAsync(env, () => env.R2_BUCKET.head(objectName as string))
           : file && hasBody(file)
           ? file
-          : await retryAsync(env, () => env.R2_BUCKET.get(path, { range }));
+          : await retryAsync(env, () => env.R2_BUCKET.get(objectName as string, { range }));
 
       let notFound: boolean = false;
 
       if (file === null) {
-        if (env.INDEX_FILE && triedIndex) {
-          // remove the index file since it doesn't exist
-          path = path.substring(0, path.length - env.INDEX_FILE.length);
-        }
-
-        if (env.DIRECTORY_LISTING && (path.endsWith("/") || path === "")) {
-          // return the dir listing
-          let listResponse = await makeListingResponse(path, env, request);
-
-          if (listResponse !== null) {
-            if (listResponse.headers.get("cache-control") !== "no-store") {
-              ctx.waitUntil(cache.put(request, listResponse.clone()));
-            }
-            return listResponse;
-          }
-        }
-
         if (env.NOTFOUND_FILE && env.NOTFOUND_FILE != "") {
           notFound = true;
-          path = env.NOTFOUND_FILE;
+          objectName = env.NOTFOUND_FILE;
           file =
             request.method === "HEAD"
-              ? await retryAsync(env, () => env.R2_BUCKET.head(path))
-              : await retryAsync(env, () => env.R2_BUCKET.get(path));
+              ? await retryAsync(env, () => env.R2_BUCKET.head(objectName as string))
+              : await retryAsync(env, () => env.R2_BUCKET.get(objectName as string));
         }
 
         // if it's still null, either 404 is disabled or that file wasn't found either

@@ -1,6 +1,6 @@
-name = "render"
+name = "isos-repo-worker"
 main = "src/index.ts"
-compatibility_date = "2022-05-15"
+"compatibility_date": "2025-02-04",
 # Set this to false if you don't want to use the default *.workers.dev route.
 # Note that *.workers.dev routes don't support native worker-level caching: https://developers.cloudflare.com/workers/runtime-apis/cache/
 workers_dev = true
@@ -20,8 +20,8 @@ PATH_PREFIX = ""
 
 # Index file to search for on directory requests, set to "" to disable indexes
 # Relative to the directory of the request.
-#INDEX_FILE = ""
-INDEX_FILE = "index.html"
+INDEX_FILE = ""
+#INDEX_FILE = "index.html"
 
 # File to fall back to when the requested path is not found in the bucket.
 # Incurs an additional read operation for 404 requests.
@@ -56,6 +56,6 @@ enabled = true
 
 [[r2_buckets]]
 binding = "R2_BUCKET"
-bucket_name = "kot"         # Set this to your R2 bucket name. Required
-preview_bucket_name = "kot" # Set this to your preview R2 bucket name. Can be equal to bucket_name. Optional
+bucket_name = "isos"         # Set this to your R2 bucket name. Required
+preview_bucket_name = "isos" # Set this to your preview R2 bucket name. Can be equal to bucket_name. Optional
 #jurisdiction = "eu"        # Set this to "eu" or "us". Optional if the bucket has no jurisdiction restrictions
