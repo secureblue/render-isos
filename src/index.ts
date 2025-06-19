@@ -279,7 +279,7 @@ export default {
           "content-type":
             file.httpMetadata?.contentType ?? "application/octet-stream",
           "content-language": file.httpMetadata?.contentLanguage ?? "",
-          "content-disposition": file.httpMetadata?.contentDisposition ?? "",
+          "content-disposition": `attachment; filename="${key}"`,
           "content-range":
             range && !notFound ? getRangeHeader(range, file.size) : "",
           "content-length": contentLength.toString(),
