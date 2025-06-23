@@ -51,6 +51,9 @@ LOGGING = true
 # Set the number of retries allowed for each R2 operation (-1 for unlimited).
 R2_RETRIES = 0
 
+# Most recent ISO date
+DATE_SUFFIX = 20250623
+
 [observability]
 enabled = true
 
