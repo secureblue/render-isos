@@ -13,6 +13,7 @@ export interface Env {
   DIRECTORY_CACHE_CONTROL?: string;
   LOGGING?: boolean;
   R2_RETRIES?: number;
+  DATE_SUFFIX?: number;
 }
 
 const units = ["B", "KB", "MB", "GB", "TB"];
@@ -114,7 +115,7 @@ export default {
           return new Response("Missing parameters", { status: 400 });
         }
 
-        key = `${de}-${nvidia}-hardened.iso`;
+        key = `secureblue-${de}-${nvidia}-hardened-${env.DATE_SUFFIX}.iso`;
         if (url.pathname === checksumDownloadPath) {
           key += "-CHECKSUM";
         }
