@@ -102,7 +102,6 @@ export default {
       }
       const url = new URL(request.url);
       const keyringFilename = "secureblue-keyring.gpg";
-      const bucketName = "isos";
       const isoDownloadPath = "/download";
       const checksumDownloadPath = "/downloadSHA256SUM";
       let objectName: string | undefined;
@@ -120,10 +119,10 @@ export default {
           key += "-CHECKSUM";
         }
 
-        objectName = `${bucketName}/${key}`;
+        objectName = `${key}`;
       } else if (url.pathname.slice(1) === keyringFilename) {
         key = keyringFilename;
-        objectName = `${bucketName}/${keyringFilename}`;
+        objectName = `${keyringFilename}`;
       } else {
         return new Response("Not Found", { status: 404 });
       }
