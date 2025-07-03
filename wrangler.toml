@@ -46,7 +46,7 @@ HIDE_HIDDEN_FILES = false
 DIRECTORY_CACHE_CONTROL = "no-store"
 
 # Set debugging log enabled.
-LOGGING = true
+LOGGING = false
 
 # Set the number of retries allowed for each R2 operation (-1 for unlimited).
 R2_RETRIES = 0
@@ -55,7 +55,7 @@ R2_RETRIES = 0
 DATE_SUFFIX = 20250626
 
 [observability]
-enabled = true
+enabled = false
 
 [[r2_buckets]]
 binding = "R2_BUCKET"
