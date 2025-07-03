@@ -316,11 +316,7 @@ export default {
           "content-length": contentLength.toString(),
         },
       });
-
-      if (url.pathname === torrentDownloadPath) {
-        response.headers.set("cross-origin-opener-policy", "same-origin-allow-popups");
-      }
-
+      
       if (request.method === "GET" && !range && isCachingEnabled && !notFound)
         ctx.waitUntil(cache.put(request, response.clone()));
     } else {
