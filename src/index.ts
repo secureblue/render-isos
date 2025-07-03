@@ -295,26 +295,26 @@ export default {
       response = new Response(body, {
         status: notFound ? 404 : range ? 206 : 200,
         headers: {
-          "accept-ranges": "bytes",
-          "access-control-allow-origin": env.ALLOWED_ORIGINS || "",
-          "cross-origin-opener-policy": "same-origin",
+          "Accept-Ranges": "bytes",
+          "Access-Control-Allow-Origin": env.ALLOWED_ORIGINS || "",
+          "Cross-Origin-Opener-Policy": "same-origin",
 
-          etag: notFound ? "" : file.httpEtag,
+          "ETag": notFound ? "" : file.httpEtag,
           // if the 404 file has a custom cache control, we respect it
-          "cache-control":
+          "Cache-Control":
             file.httpMetadata?.cacheControl ??
             (notFound ? "" : env.CACHE_CONTROL || ""),
-          expires: file.httpMetadata?.cacheExpiry?.toUTCString() ?? "",
-          "last-modified": notFound ? "" : file.uploaded.toUTCString(),
+          "Expires": file.httpMetadata?.cacheExpiry?.toUTCString() ?? "",
+          "Last-Modified": notFound ? "" : file.uploaded.toUTCString(),
 
-          "content-encoding": file.httpMetadata?.contentEncoding ?? "",
-          "content-type":
+          "Content-Encoding": file.httpMetadata?.contentEncoding ?? "",
+          "Content-Type":
             file.httpMetadata?.contentType ?? "application/octet-stream",
-          "content-language": file.httpMetadata?.contentLanguage ?? "",
-          "content-disposition": `attachment; filename="${key}"`,
-          "content-range":
+          "Content-Language": file.httpMetadata?.contentLanguage ?? "",
+          "Content-Disposition": `attachment; filename="${key}"`,
+          "Content-Range":
             range && !notFound ? getRangeHeader(range, file.size) : "",
-          "content-length": contentLength.toString(),
+          "Content-Length": contentLength.toString(),
         },
       });
 
