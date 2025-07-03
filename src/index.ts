@@ -103,6 +103,7 @@ export default {
       const url = new URL(request.url);
       const keyringFilename = "secureblue-keyring.gpg";
       const isoDownloadPath = "/download";
+      const torrentDownloadPath = "/downloadTorrent";
       const checksumDownloadPath = "/downloadSHA256SUM";
       let objectName: string | undefined;
       let key: string | undefined = undefined;
@@ -120,6 +121,36 @@ export default {
         }
 
         objectName = `${key}`;
+      } else if (url.pathname === torrentDownloadPath) {
+        const de = url.searchParams.get("de");
+        const nvidia = url.searchParams.get("nvidia");
+        
+        let cat = "";
+        if (de === "silverblue") {
+          cat = "GNOME%20Editions";
+        } else if (de === "kinoite") {
+          cat = "KDE%20Plasma%20Editions";
+        } else if (de === "sericea") {
+          cat = "Sway%20Editions";
+        }
+
+        let id = 0;
+        if (nvidia === "nvidia") {
+          id = 1;
+        } else if (nvidia === "nvidia-open") {
+          id = 2;
+        }
+
+        const redirectUrl = `https://fosstorrents.com/thankyou/?name=secureblue&cat=${cat}&id=${id}&hybrid=0`;
+        const response = new Response(null, {
+          status: 301,
+          headers: {
+            "Location": redirectUrl,
+            "Access-Control-Allow-Origin": env.ALLOWED_ORIGINS || "",
+          },
+        });
+
+        return response;
       } else if (url.pathname.slice(1) === keyringFilename) {
         key = keyringFilename;
         objectName = `${keyringFilename}`;
@@ -285,6 +316,10 @@ export default {
           "content-length": contentLength.toString(),
         },
       });
+
+      if (url.pathname === torrentDownloadPath) {
+        response.headers.set("cross-origin-opener-policy", "same-origin-allow-popups");
+      }
 
       if (request.method === "GET" && !range && isCachingEnabled && !notFound)
         ctx.waitUntil(cache.put(request, response.clone()));
