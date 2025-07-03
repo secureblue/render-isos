@@ -297,6 +297,7 @@ export default {
         headers: {
           "accept-ranges": "bytes",
           "access-control-allow-origin": env.ALLOWED_ORIGINS || "",
+          "cross-origin-opener-policy": "same-origin",
 
           etag: notFound ? "" : file.httpEtag,
           // if the 404 file has a custom cache control, we respect it
@@ -316,7 +317,7 @@ export default {
           "content-length": contentLength.toString(),
         },
       });
-      
+
       if (request.method === "GET" && !range && isCachingEnabled && !notFound)
         ctx.waitUntil(cache.put(request, response.clone()));
     } else {
