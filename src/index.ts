@@ -104,10 +104,11 @@ export default {
       const keyringFilename = "secureblue-keyring.gpg";
       const isoDownloadPath = "/download";
       const torrentDownloadPath = "/downloadTorrent";
+      const torrentChecksumDownloadPath = "/downloadTorrentSHA256SUM";
       const checksumDownloadPath = "/downloadSHA256SUM";
       let objectName: string | undefined;
       let key: string | undefined = undefined;
-      if (url.pathname === isoDownloadPath || url.pathname === checksumDownloadPath) {
+      if (url.pathname === isoDownloadPath || url.pathname === checksumDownloadPath || url.pathname === torrentChecksumDownloadPath) {
         const de = url.searchParams.get("de");
         const nvidia = url.searchParams.get("nvidia");
 
@@ -118,6 +119,10 @@ export default {
         key = `secureblue-${de}-${nvidia}-hardened-${env.DATE_SUFFIX}.iso`;
         if (url.pathname === checksumDownloadPath) {
           key += "-CHECKSUM";
+        }
+
+        if (url.pathname === torrentChecksumDownloadPath) {
+          key += ".torrent-CHECKSUM"
         }
 
         objectName = `${key}`;
