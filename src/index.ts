@@ -14,6 +14,7 @@ export interface Env {
   LOGGING?: boolean;
   R2_RETRIES?: number;
   DATE_SUFFIX?: number;
+  DEV_DATE_SUFFIX?: number;
 }
 
 const units = ["B", "KB", "MB", "GB", "TB"];
@@ -111,12 +112,13 @@ export default {
       if (url.pathname === isoDownloadPath || url.pathname === checksumDownloadPath || url.pathname === torrentChecksumDownloadPath) {
         const de = url.searchParams.get("de");
         const nvidia = url.searchParams.get("nvidia");
+        const dateSuffix = url.searchParams.get("dev") ? env.DEV_DATE_SUFFIX : env.DATE_SUFFIX;
 
         if (!de || !nvidia) {
           return new Response("Missing parameters", { status: 400 });
         }
 
-        key = `secureblue-${de}-${nvidia}-hardened-${env.DATE_SUFFIX}.iso`;
+        key = `secureblue-${de}-${nvidia}-hardened-${dateSuffix}.iso`;
         if (url.pathname === checksumDownloadPath) {
           key += "-CHECKSUM";
         }
