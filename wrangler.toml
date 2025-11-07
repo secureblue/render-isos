@@ -52,7 +52,7 @@ LOGGING = false
 R2_RETRIES = 0
 
 # Most recent ISO date
-DATE_SUFFIX = 20250626
+DATE_SUFFIX = 20251106
 
 # ISO date for testing
 DEV_DATE_SUFFIX = 20251106
