@@ -1,6 +1,6 @@
-name = "render"
+name = "isos-repo-worker"
 main = "src/index.ts"
-compatibility_date = "2022-05-15"
+compatibility_date = "2025-02-04"
 # Set this to false if you don't want to use the default *.workers.dev route.
 # Note that *.workers.dev routes don't support native worker-level caching: https://developers.cloudflare.com/workers/runtime-apis/cache/
 workers_dev = true
@@ -8,7 +8,7 @@ workers_dev = true
 [vars]
 # The `access-control-allow-origin` header: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin
 # Optional, the `access-control-allow-origin` header is omitted if unset, which blocks all cross-origin requests.
-ALLOWED_ORIGINS = ""
+ALLOWED_ORIGINS = "https://secureblue.dev"
 
 # The `cache-control` header: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control.
 # Optional, the `cache-control` header is omitted if unset, which would NOT disable caching: https://developers.cloudflare.com/workers/runtime-apis/cache/#headers
@@ -20,8 +20,8 @@ PATH_PREFIX = ""
 
 # Index file to search for on directory requests, set to "" to disable indexes
 # Relative to the directory of the request.
-#INDEX_FILE = ""
-INDEX_FILE = "index.html"
+INDEX_FILE = ""
+#INDEX_FILE = "index.html"
 
 # File to fall back to when the requested path is not found in the bucket.
 # Incurs an additional read operation for 404 requests.
@@ -46,16 +46,22 @@ HIDE_HIDDEN_FILES = false
 DIRECTORY_CACHE_CONTROL = "no-store"
 
 # Set debugging log enabled.
-LOGGING = true
+LOGGING = false
 
 # Set the number of retries allowed for each R2 operation (-1 for unlimited).
 R2_RETRIES = 0
 
+# Most recent ISO date
+DATE_SUFFIX = 20251106
+
+# ISO date for testing
+DEV_DATE_SUFFIX = 20251106
+
 [observability]
-enabled = true
+enabled = false
 
 [[r2_buckets]]
 binding = "R2_BUCKET"
-bucket_name = "kot"         # Set this to your R2 bucket name. Required
-preview_bucket_name = "kot" # Set this to your preview R2 bucket name. Can be equal to bucket_name. Optional
+bucket_name = "isos"         # Set this to your R2 bucket name. Required
+preview_bucket_name = "isos" # Set this to your preview R2 bucket name. Can be equal to bucket_name. Optional
 #jurisdiction = "eu"        # Set this to "eu" or "us". Optional if the bucket has no jurisdiction restrictions
