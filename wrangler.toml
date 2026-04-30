@@ -55,7 +55,7 @@ R2_RETRIES = 0
 DATE_SUFFIX = 20251106
 
 # ISO date for testing
-DEV_DATE_SUFFIX = 20251106
+DEV_DATE_SUFFIX = 20260430
 
 [observability]
 enabled = false
